@@ -1,0 +1,15 @@
+<h2 mat-dialog-title>{{context.statusHeaderMsg}}</h2>
+
+<mat-dialog-content class="mat-typography">
+    <h4>{{context.msg}}</h4>
+
+</mat-dialog-content>
+<mat-dialog-actions class="align-btn">
+    <button mat-stroked-button
+        class="ok-btn"
+        color="primary"
+        (click)="closeDialog($event)">
+        {{context.closeButtonText}}
+    </button>
+
+</mat-dialog-actions>

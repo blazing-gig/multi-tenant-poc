@@ -1,0 +1,55 @@
+<div class="container">
+    <div class="content-wrapper">
+        <mat-card class="content">
+            <mat-list>
+                <div mat-subheader>Hospitals</div>
+
+                <ng-container *ngFor='let hospital of hospitals'>
+                    <mat-divider></mat-divider>
+                    <mat-list-item>
+                        <div mat-line>name: {{hospital.name}}</div>
+                        <div mat-line>address: {{hospital.address}}</div>
+                    </mat-list-item>
+
+                </ng-container>
+
+            </mat-list>
+
+        </mat-card>
+
+        <mat-card class="content with-margin">
+            <mat-list>
+
+                <div class="d-flex flex-row justify-content-between">
+                    <div mat-subheader class="flex-grow-1">Patients</div>
+                    <div class="add-btn-padding">
+                        <button mat-raised-button
+                            color="primary"
+                            (click)="createPatient($event)">
+                            Add Patient
+                        </button>
+                    </div>
+
+                    <mat-progress-spinner
+                        [mode]="'determinate'"
+                        [value]="spinnerValue"
+                        [diameter]="40"
+                        [strokeWidth]="10">
+                    </mat-progress-spinner>
+
+                </div>
+
+                <ng-container *ngFor='let patient of patients'>
+                    <mat-divider></mat-divider>
+                    <mat-list-item>
+                        <div mat-line>name: {{patient.name}}</div>
+                        <div mat-line>email: {{patient.email}}</div>
+                    </mat-list-item>
+                </ng-container>
+
+            </mat-list>
+
+        </mat-card>
+
+    </div>
+</div>

@@ -1,0 +1,44 @@
+<mat-card class="container">
+    <div class="d-flex justify-content-center">
+        <h3>
+            Add Patient Form
+        </h3>
+    </div>
+    <div class="pad-top">
+        <form class="example-form" [formGroup]="addPatientForm"
+            (keydown)="keyDownFunction($event)">
+
+            <div class="pad-around">
+                <mat-form-field class="example-full-width">
+                    <input matInput type="email" placeholder="Email" formControlName="email" required>
+
+                    <mat-error *ngIf="addPatientForm.controls.email.hasError('required')
+                        && (addPatientForm.controls.email.dirty || addPatientForm.controls.email.touched)">
+                        This field is mandatory
+                    </mat-error>
+
+                </mat-form-field>
+            </div>
+
+            <div class="pad-around">
+                <mat-form-field class="example-full-width">
+                    <input matInput placeholder="Name" formControlName="name">
+                </mat-form-field>
+            </div>
+
+        </form>
+
+        <div class="d-flex flex-row add-pt-btn" [class.disable-div]="addPatientForm.invalid">
+            <button mat-raised-button color="primary" (click)="addPatient($event)" class="margin-around">
+                Add Patient
+            </button>
+            <button mat-stroked-button mat-dialog-close class="margin-around">
+                Cancel
+            </button>
+            
+        </div>
+
+    </div>
+
+</mat-card>
+    

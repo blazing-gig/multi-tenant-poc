@@ -1,0 +1,95 @@
+.container {
+    height: 100%;
+    position: relative;
+}
+
+.vertical-center {
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+
+.divider-pad-around {
+    padding: 0.7rem;
+}
+
+.example-form {
+    .pad-around {
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding: 0.5rem;
+    }
+}
+
+.pad-around {
+    padding: 0.7rem;
+}
+
+.margin-around {
+    margin: 5px;
+}
+
+.extn-field {
+    width: 70px!important;
+}
+
+.add-pt-btn {
+    padding-top: 2rem;
+    padding-right: 0.5rem;
+    padding-bottom: 0.7rem;
+    padding-left: 0.5rem;
+    button {
+        width: 100%;
+        border-radius: 20px;
+    }
+    
+}
+
+.btn-rounded {
+    border-radius: 20px;
+}
+
+.mat-card .mat-divider-horizontal{
+    position: unset;
+}
+
+
+// div.container6 {
+//     height: 10em;
+//     display: flex;
+//     align-items: center;
+//     justify-content: center
+// }
+
+.content {
+    max-width: 500px;
+    margin: auto;
+    background: white;
+    padding: 10px;
+}
+
+div.inline-field {
+    width: 50%;
+    padding: 0.6rem;
+}
+
+// .example-card {
+//     max-width: 400px;
+// }
+
+p.margin-unset{
+    margin-top: unset;
+    margin-bottom: unset;
+    margin-right: 0.7rem;
+}
+
+.pad-top {
+    padding-top: 20px;
+}
+
+.example-full-width {
+    width: 100%;
+}

@@ -1,0 +1,57 @@
+version: '3'
+
+services:
+  web-frontend:
+    build: ./demo-app
+    image: dtr-frontend
+    restart: always
+    ports:
+      - "9500:80"
+
+  web-backend:
+    build: ./mt_site
+    image: mt-poc-backend:latest
+    entrypoint: /code/web-entrypoint.sh
+    restart: always
+    depends_on:
+      - postgres-db
+      - redis-db
+    expose:
+      - "9000"
+
+  celery:
+    image: mt-poc-backend:latest
+    entrypoint: /code/celery-entrypoint.sh
+    restart: always
+    depends_on:
+      - redis-db
+      - web-backend
+
+  postgres-db:
+    restart: always
+    build: ./db
+    image: mt-poc-postgres-db
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    expose:
+      - "5432"
+    ports:
+      - "9700:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data/
+
+  redis-db:
+    restart: always
+    image: redis:6
+    expose:
+      - "6379"
+    ports:
+      - "9600:6379"
+    volumes:
+      - redis-data:/data
+
+volumes:
+  pg-data:
+  redis-data:
