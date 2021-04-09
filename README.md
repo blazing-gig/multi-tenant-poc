@@ -40,12 +40,86 @@ Apart from the above mentioned solutions, the library also offers out-of-the-box
 
 > **NOTE**: Of the components mentioned above, the code in this repo contains support for only a few of them as this is just for demonstration pruposes. However, ideas by which support can be extended for the other components will be discussed in the conference.
 
-# Usage
+# Running the demo app
+
+## Pre-requisites
+
+The demo app comes in a completely dockerised setup. In order to launch it, it's mandatory to
+have [Docker](https://www.docker.com/get-started) and 
+[docker-compose](https://docs.docker.com/compose/install/) installed and available as part of
+the system `PATH`.
+
+Before launching the app, in order to verify its multi-tenant behaviour, a couple of host
+entries namely `tenant-1.test.com` and `tenant-2.test.com` must be added to the namespace
+resolver of your machine. Thus when the browser points to one of these hosts, the playground
+app's backend would be able to route requests to the appropriate database. 
+
+For Linux and MacOS users, please add the following entries to the `/etc/hosts` file as below:
+
+```
+##
+# Host Database
+#
+# localhost is used to configure the loopback interface
+# when the system is booting.  Do not change this entry.
+##
+...
+127.0.0.1 tenant-1.test.com
+127.0.0.1 tenant-2.test.com
+...
+# End of section
+```
+
+> **NOTE**: You might need to ensure that the current user has `sudo` privileges in order to edit the
+`/etc/hosts` file.
 
 
+## Launch
 
+To launch the app, enter the following commands:
 
+```shell
+$ cd ~/multi-tenant-poc
+$ docker-compose build
+$ docker-compose up -d
+```
 
+To test things out, try the following:
 
+1.  Open your browser and point it to `tenant-1.test.com:9500`. You should see the
+    following image:
+    ![tenant 1 screen](img/playground/tenant_1_landing_screen.png)
+
+2.  Now, point the browser to `tenant-2.test.com:9500`. You should see the following image.
+    
+    ![tenant 2 screen](img/playground/tenant_2_landing_screen.png)
+    
+    You can see that, in the above image, the data for the **Hospitals** tab is different
+    compared to the data that was displayed for `tenant-1.test.com`. This confirms that requests
+    are being routed to different databases based on the domain name.
+    
+3.  As you can see, in both the above screens, the **Patients** tab is empty. Let's try adding one. 
+    Click on the **Add Patient** button and fill up the form with the required details and submit
+    it. You should see the following screen once submitted:
+    
+    ![Add Patient Dialog](img/playground/patient_add_success.png)
+    
+    By now, you would have noticed the small spinner near the **Add Patient** button. Every time the
+    spinner completes one full rotation, the **Patients** tab is refreshed. 
+    
+    The reason for doing this is that the Add Patient HTTP endpoint does not immediately add the
+    new patient to the database but rather delegates this responsibility to a 
+    ***celery task***. Hence, the UI would be able to reflect the latest changes only after the
+    celery task completes its execution.
+    
+    The aim of the above implementation is to illustrate that every *celery task* that the app
+    has, when invoked, is bound to a specific tenant's context without any code changes. 
+    
+    !!! info "Verify the above statement"
+        Point your browser to `tenant-1.test.com:9500`. You would find that the
+        **Patients** tab is still empty.
+    
+    To know more about how the tenant context binding works with respect to celery tasks, <br> 
+    [click here](reference/celery.md).
 
 
