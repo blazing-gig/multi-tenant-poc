@@ -88,6 +88,7 @@ To test things out, try the following:
 
 1.  Open your browser and point it to `tenant-1.test.com:9500`. You should see the
     following image:
+    
     ![tenant 1 screen](img/tenant_1_landing_screen.png)
 
 2.  Now, point the browser to `tenant-2.test.com:9500`. You should see the following image.
