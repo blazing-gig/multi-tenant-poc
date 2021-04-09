@@ -16,7 +16,7 @@ This project adopts the first (isolated DB) approach due to the following reason
 
 The following architecture diagram explains better as to what the package/library achieves:
 
--- diag goes here.
+![Multi-tenant architecture diagram](img/quickstart_mt_arch_1.png)
 
 > **NOTE**: The term *package/library* used above refers to the [tenant_router](mt_site/tenant_router) Django app which is currently a part of the web appication made for demonstrating the PoC. However, it has been built in such a way that it can be abstracted out into a re-usable pip installable app that can be plugged into any existing Django web application to solve the multi-tenancy problem.
 
