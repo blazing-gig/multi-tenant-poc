@@ -12,7 +12,7 @@ This project adopts the first (isolated DB) approach due to the following reason
 1. Typically SAAS platforms have an SLA stating that every tenant's data has to be complete isolated from one another so as to avoid potential data leaks or data overlap.
 2. If the shared DB approach is chosen, it would entail both code change as well as DB schema changes/migrations etc., which can be time consuming for already running live applications to accomodate.
 3. Most of the tools around DB management (like DB dump/restore, monitoring etc.,) are built to operate at the database level. If the shared DB approach is chosen, then these tools would either become obsolete or would have to be used with modifications made on a case-to-case basis and ends up becoming a bottle-neck for the migration process.
-4. Currently there is no general purpose package/library that can be plugged into existing single-tenant applications to make them multi-tenant by following this approach.
+4. Currently there is no general purpose package/library which is battle-tested and production ready that can be plugged into existing single-tenant applications to make them multi-tenant by following this approach. ([django-db-multitenant](https://github.com/mik3y/django-db-multitenant) has been deemed experimental by the authors)
 
 The following architecture diagram explains better as to what the package/library achieves:
 
