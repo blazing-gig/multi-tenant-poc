@@ -16,7 +16,7 @@ This project adopts the first (isolated DB) approach due to the following reason
 
 The following architecture diagram explains better as to what the package/library achieves:
 
-![Multi-tenant architecture diagram](img/quickstart_mt_arch_1.png)
+![Multi-tenant architecture diagram](img/quickstart_mt_arch.png)
 
 > **NOTE**: The term *package/library* used above refers to the [tenant_router](mt_site/tenant_router) Django app which is currently a part of the web appication made for demonstrating the PoC. However, it has been built in such a way that it can be abstracted out into a re-usable pip installable app that can be plugged into any existing Django web application to solve the multi-tenancy problem.
 
@@ -51,7 +51,7 @@ the system `PATH`.
 
 Before launching the app, in order to verify its multi-tenant behaviour, a couple of host
 entries namely `tenant-1.test.com` and `tenant-2.test.com` must be added to the namespace
-resolver of your machine. Thus when the browser points to one of these hosts, the playground
+resolver of your machine. Thus when the browser points to one of these hosts, the demo
 app's backend would be able to route requests to the appropriate database. 
 
 For Linux and MacOS users, please add the following entries to the `/etc/hosts` file as below:
@@ -88,6 +88,7 @@ To test things out, try the following:
 
 1.  Open your browser and point it to `tenant-1.test.com:9500`. You should see the
     following image:
+    
     ![tenant 1 screen](img/tenant_1_landing_screen.png)
 
 2.  Now, point the browser to `tenant-2.test.com:9500`. You should see the following image.
