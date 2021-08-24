@@ -1,9 +1,15 @@
+from http import HTTPStatus
+
 from django.urls import resolve
 from django.utils.module_loading import import_string
+from django.http import JsonResponse
 
 from tenant_router.conf import settings
 from tenant_router.exceptions import ImproperlyConfiguredError
-from tenant_router.managers.tenant_context import tenant_context_manager
+from tenant_router.managers.tenant_context import (
+    tenant_context_manager,
+    TenantContextNotFound
+)
 from tenant_router.managers.tls import tls_tenant_manager
 
 
@@ -98,14 +104,22 @@ class TenantContextMiddleware:
 
         if not self._is_route_whitelisted(request.path):
             tenant_id = self._get_tenant_id(request)
-
-            tls_tenant_manager.push_tenant_context(
-                tenant_context_manager.get_by_id(
-                    tenant_id=tenant_id
+            try:
+                tls_tenant_manager.push_tenant_context(
+                    tenant_context_manager.get_by_id(
+                        tenant_id=tenant_id
+                    )
                 )
-            )
-
-            should_clear_ctxt = True
+                should_clear_ctxt = True
+            except TenantContextNotFound:
+                return JsonResponse(
+                    {
+                        "err_msg": "Unable to find tenant with id {tenant_id}. "
+                                   "Please verify if the tenant still exists in the "
+                                   "platform and try again.".format(tenant_id=tenant_id)
+                    },
+                    status=HTTPStatus.BAD_REQUEST
+                )
 
         response = self.get_response(request)
 

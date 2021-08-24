@@ -27,15 +27,14 @@ class TenantCreateHandler(BaseTenantHandler):
     def _add_tenant_id(self):
         tenant_ids = self.config_store.get(TENANT_IDS_KEY, [])
         tenant_ids.append(self.tenant_id)
-        self.config_store.set(
-            TENANT_IDS_KEY, tenant_ids
-        )
+        self.config_store.set(TENANT_IDS_KEY, tenant_ids)
 
     def execute(self):
         self._add_tenant_id()
         self._generate_event_payload()
 
         self._exec_callback_chain()
+        print("executing callback chain")
         self._exec_migrate()
 
         channel_name = construct_tenant_channel_name(

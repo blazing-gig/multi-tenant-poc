@@ -163,56 +163,56 @@ CELERY_BROKER_URL = "redis://{REDIS_HOST}:{REDIS_PORT}/".format(
 # }
 
 
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "void": {
-            "format": ""
-        },
-        "standard": {
-            "format": "%(asctime)s [%(levelname)s] %(name)s %(funcName)s:%(lineno)d - %(message)s"
-        }
-    },
-    "handlers": {
-        "default": {
-            "level": "INFO",
-            "class": "logging.handlers.RotatingFileHandler",
-            "formatter": "standard",
-            "filename": "app.log",
-            "maxBytes": 20971520,
-            "mode": "a+",
-            "backupCount": 6,
-            "encoding": "utf8"
-        },
-        "application_handler": {
-            "level": "INFO",
-            "class": "logging.handlers.RotatingFileHandler",
-            "formatter": "void",
-            "filename": "applicationServer.log",
-            "maxBytes": 10485760,
-            "mode": "w",
-            "backupCount": 4,
-            "encoding": "utf8"
-        },
-    },
-    "loggers": {
-        "": {
-            "handlers": [
-                "default"
-            ],
-            "level": "INFO",
-            "propagate": False
-        },
-        "application": {
-            "handlers": [
-                "application_handler"
-            ],
-            "level": "INFO",
-            "propagate": False
-        },
-    }
-}
+# LOGGING = {
+#     "version": 1,
+#     "disable_existing_loggers": False,
+#     "formatters": {
+#         "void": {
+#             "format": ""
+#         },
+#         "standard": {
+#             "format": "%(asctime)s [%(levelname)s] %(name)s %(funcName)s:%(lineno)d - %(message)s"
+#         }
+#     },
+#     "handlers": {
+#         "default": {
+#             "level": "INFO",
+#             "class": "logging.handlers.RotatingFileHandler",
+#             "formatter": "standard",
+#             "filename": "app.log",
+#             "maxBytes": 20971520,
+#             "mode": "a+",
+#             "backupCount": 6,
+#             "encoding": "utf8"
+#         },
+#         "application_handler": {
+#             "level": "INFO",
+#             "class": "logging.handlers.RotatingFileHandler",
+#             "formatter": "void",
+#             "filename": "applicationServer.log",
+#             "maxBytes": 10485760,
+#             "mode": "w",
+#             "backupCount": 4,
+#             "encoding": "utf8"
+#         },
+#     },
+#     "loggers": {
+#         "": {
+#             "handlers": [
+#                 "default"
+#             ],
+#             "level": "INFO",
+#             "propagate": False
+#         },
+#         "application": {
+#             "handlers": [
+#                 "application_handler"
+#             ],
+#             "level": "INFO",
+#             "propagate": False
+#         },
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators

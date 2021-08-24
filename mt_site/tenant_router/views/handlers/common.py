@@ -61,7 +61,11 @@ class BaseTenantHandler:
 
     def _exec_migrate(self):
         if self.should_migrate:
-            call_command("migrate_all", tenant_id=self.tenant_id)
+            print("calling migrate...")
+            try:
+                call_command("migrate_all", tenant_id=self.tenant_id)
+            except Exception as e:
+                print("exc is ", e)
 
     def _setup_mapping_metadata(self):
         self.mapping_metdata = self.config_store.get(

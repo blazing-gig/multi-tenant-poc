@@ -14,6 +14,10 @@ class DataLoader:
         "tenant-2.test.com": {
             "name": "Fortis hospitals",
             "address": "Delhi"
+        },
+        "tenant-3.test.com": {
+            "name": "Sterling hospitals",
+            "address": "Bangalore"
         }
     }
 

@@ -16,6 +16,8 @@ services:
     depends_on:
       - postgres-db
       - redis-db
+    ports:
+      - "9000:9000"
     expose:
       - "9000"
 
