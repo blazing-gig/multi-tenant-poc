@@ -10,7 +10,7 @@ from tenant_router.celery.utils import (
     deconstruct_schedule_name
 )
 from tenant_router.managers import tenant_context_manager
-from tenant_router.managers.tls import tls_tenant_manager
+from tenant_router.managers.task_local import tls_tenant_manager
 
 
 logger = logging.getLogger(__name__)

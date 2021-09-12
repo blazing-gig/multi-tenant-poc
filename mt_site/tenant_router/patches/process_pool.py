@@ -2,7 +2,7 @@ import concurrent.futures
 from concurrent.futures import ProcessPoolExecutor
 
 from tenant_router.context_decorators import tenant_context_bind
-from tenant_router.managers.tls import tls_tenant_manager
+from tenant_router.managers.task_local import tls_tenant_manager
 
 
 class MissingTenantId(Exception):

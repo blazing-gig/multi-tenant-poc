@@ -52,12 +52,8 @@ class EventQueueManager:
                     )
 
     def bootstrap(self):
-        signals.request_started.connect(
-            self.process_queue
-        )
-        signals.request_finished.connect(
-            self.process_queue
-        )
+        signals.request_started.connect(self.process_queue)
+        signals.request_finished.connect(self.process_queue)
 
 
 event_queue_manager = EventQueueManager("event_queue_manager")

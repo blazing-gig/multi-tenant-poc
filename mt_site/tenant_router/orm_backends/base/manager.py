@@ -6,7 +6,7 @@ from django.utils.module_loading import import_string
 from tenant_router.orm_backends.base.migration_assistant import BaseMigrationAsst
 from tenant_router.orm_backends.base.router import BaseOrmRouter
 from tenant_router.orm_backends.utils import construct_conn_alias
-from tenant_router.managers.tls import tls_tenant_manager
+from tenant_router.managers.task_local import tls_tenant_manager
 
 
 class InvalidMigrationAsstClassError(Exception):

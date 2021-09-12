@@ -1,6 +1,7 @@
 import logging
 from importlib import import_module
 
+from tenant_router.cache.config_manager import cache_config_manager
 from tenant_router.conf import settings
 
 from tenant_router.event_queue.manager import event_queue_manager
@@ -74,6 +75,7 @@ class _AppBootStrapper:
 
         self._bootstrap_sequence = [
             tenant_context_manager,
+            cache_config_manager,
             orm_managers,
             celery_manager,
             pubsub_proxy,
