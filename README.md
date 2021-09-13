@@ -127,57 +127,50 @@ To test things out, try the following:
 
 The following configuration options are available and will have to be provided in the `settings.py` module.
 
-### ```TENANT_ROUTER_CONFIG_STORE_SETTINGS``` (mandatory)
+### **```CONFIG STORE```**
+*Required*. Type: `dict`
 
 This setting holds the configuration for the KV(key/value) store that would be looked up at
 boot time to pull the necessary configuration and bootstrap various components of this package
 (like ORM managers etc.,).
 
-Also this KV store should provide a niche Pub/Sub mechanism in order to inform the application of any
-changes that occur over a particular key-space.
+Any suitable cache backend compatible with Django's `CACHES` can be used to provide the required
+functionality. 
 
-The package ships with out-of-the-box support for using `Redis` as the KV store. It should be configured
-as follows:
+Below is an example configuration:
 
 ```python
+# settings.py
 ...
-TENANT_ROUTER_CONFIG_STORE_SETTINGS = {
-    'BACKEND': 'tenant_router.config_store.backends.redis.RedisStore',
-    
-    # optional location block. If not provided, default Redis host:port would be used
-    'LOCATION': {
-        'HOST': 'some_host',
-        'PORT': 'some_port'
-    },
-
-    # Any additional options to be passed to the backend class. Refer to the API docs for 
-    # more info about what can be passed here.
-    'OPTIONS': {
-        # kwargs to be passed to the underlying `client` KV instance.  
-        'CLIENT_KWARGS': {
-            ...
-        },
-        
-        # optional serializer block. If not provided, `pickle` will be used as the default
-        'SERIALIZER': {
-            'CLASS': 'tenant_router.config_store.serializers.json.JSONSerializer',
-            'OPTIONS': {...} # Any additional kwargs to be passed to the serializer class 
-        },
-        ...
+CACHES = {
+    "tenant_router_config_store": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "TIMEOUT": None,
+        "LOCATION": "redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}".format(
+            REDIS_HOST='your_redis_host',
+            REDIS_PORT='your_redis_port',
+            REDIS_DB='your_db_index'
+        ),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "SERIALIZER": "django_redis.serializers.json.JSONSerializer"
+        }
     }
 }
 ...
 ```
 
-> Note that both the `BACKEND` as well as `SERIALIZER` config options are customizable and can be
-> overridden. The guidelines for how to write a custom `BACKEND` (for a different KV store) as well
-> as a custom `SERIALIZER` will be present in the API documentation.
+> **IMPORTANT**
+    Django, by default, associates a timeout (ttl) with all keys stored in a given cache. Since we expect the data
+    in the config store to be persistent (i.e no timeout), the `TIMEOUT` parameter has to be explicitly
+    set to `None`.
 
+> **NOTE**
+    The `tenant_router_config_store` is a reserved special key which would be used internally by the 
+    library for identifying the cache containing the tenant configuration. If it conflicts with an 
+    already existing key, the conflicting key (specified by the user) will have to be changed.  
 
-Also note that the configuration required for the package to bootstrap **must be available in this
-config store at boot time**. If not, the server will error out.
-
-For details about the schema for this configuration, [click here](#configuration-schema).
+For details about the schema of this configuration, [click here](#configuration-schema). 
 
 
 ### ```TENANT_ROUTER_SERVICE_NAME``` (mandatory)
@@ -204,8 +197,7 @@ etc., So each of these ORMs' should register themselves as part of this configur
 ```manager``` classes and provide a ```settings``` key from where they would pick up
 template configurations which would get replicated across tenants.
 
-The package ships with ```manager``` classes for the Django ORM, PyModm orm and Elasticsearch client so that
-applications can start using this package with minimal effort.
+The package currently ships with a ```manager``` class for Django ORM. 
 
 Example:
 ```python
@@ -222,41 +214,11 @@ DATABASES = {
         "PORT": os.environ["PG_PORT"],
     }
 }
-
-MONGO_DB_SETTINGS = {
-    "default": {
-        "NAME": os.environ["MONGO_DATABASE"],
-        "USER": os.environ.get("MONGO_USER"),
-        "PASS": os.environ.get("MONGO_PASSWORD"),
-        "HOST": os.environ["MONGO_HOST"],
-        "PORT": os.environ["MONGO_PORT"],
-    }
-}
-
-ES_SETTINGS = {
-    "default": {
-        "HOSTS": [
-            {'host': '', 'port': '', ...},
-            {'host': '', 'port': '', ...}
-        ],
-        "OPTIONS": {
-            ...
-        }
-    }
-}
-
-
 ...
 # The most basic form of this setting is as follows:
 TENANT_ROUTER_ORM_SETTINGS = {
     'django_orm': {
         'SETTINGS_KEY': 'DATABASES'
-    },
-    'pymodm_orm': {
-        'SETTINGS_KEY': 'MONGO_DB_SETTINGS'
-    },
-    'es_orm': {
-        'SETTINGS_KEY': 'ES_SETTINGS'
     }
 }
 ...
@@ -267,11 +229,11 @@ DATABASE_ROUTERS = ['tenant_router.orm_backends.django_orm.router.DjangoOrmRoute
 
 ```
 
-> Note that in the above example, `django_orm`, `pymodm_orm` and `es_orm` are reserved keys since
-> the package already has managers defined for these keys.
+> Note that in the above example, `django_orm` is a reserved key since
+> the package already has a manager defined for this.
 
 If the application uses an ORM library which is not supported out of the box by this package, it
-is possible to write a new `manager` class for that ORM and set it up. Also if the default `manager`
+is possible to write a `manager` class for that ORM and set it up. Also if the default `manager`
 provided doesn't account for a custom use-case, it can be overridden as well.
 
 Example:
@@ -293,8 +255,8 @@ TENANT_ROUTER_ORM_SETTINGS = {
 ...
 ```
 
-> Detailed instructions for how to go about writing a new `manager` class will be specified
-> as part of the API documentation.
+> If you'd like to implement a custom `manager` class, check out the 
+> `tenant_router.orm_backends.base.manager` file for the interface required to be implemented.
 
 ### `TENANT_ROUTER_MIDDLEWARE_SETTINGS` (optional)
 
@@ -412,8 +374,7 @@ directory level as `settings.BASE_DIR`.
 
 The configuration specified in this file is synced to the
 [config store](settings.md#config-store) when the
-[load_tenant_config](mgmt_cmds.md#load_tenant_config) command is run. Check the documentation for
-this command to know more about specifying alternate file names/file paths.
+`load_tenant_config` command is run. 
 
 ### Schema
 
@@ -488,6 +449,21 @@ Lets take a look at a more concrete example:
 }   
 ```
 
+### Populating the KV store
+
+In order to populate the KV store with the configuration in the above file, the 
+`load_tenant_config` command has to be run with `manage.py`
+
+```shell script
+$ python manage.py load_tenant_config
+```
+
+To know more about specifying alternate file paths and other available options, run:
+
+```shell script
+$ python manage.py load_tenant_config --help
+```
+
 ## DB Migrations
 
 Typically a web app would need interact with one or more databases. Also, in a Django app, this interaction
@@ -514,6 +490,12 @@ $ python manage.py migrate_all
 > **WARNING**: Running the `python manage.py migrate` sub-command **would no longer work** as
 > this is tied to only the `django_orm`. Other ORMs' would get left out from the
 > migration process.
+
+To know more about this command and the available options, run:
+
+```shell script
+$ python manage.py migrate_all --help
+```
 
 
 ### Defining a custom `MIGRATION_ASST` class
@@ -555,9 +537,6 @@ TENANT_ROUTER_ORM_SETTINGS = {
 ```
 
 ## Routers and routing strategies
-
-> This section **currently pertains only to the Django ORM** as the other ORM libraries that ship with this
-> package currently don't provide support for routing to multiple databases at the ORM level.
 
 Since the Django ORM supports routing to multiple databases at the ORM level using a concept called
 ***database routers***, there are a few scenarios to consider with respect to defining custom routers and the
@@ -791,7 +770,7 @@ TENANT_ROUTER_ORM_SETTINGS = {
 
 ## Shell
 
-Since all DB queries made via any of the ORM libraries used by the app, would now need to be
+Since all DB queries made via the ORM, would now need to be
 bound to a tenant context, by default, **any query run from within the shell would fail**.
 
 In order to fix this, some tenant context has to be set explicitly as follows:
@@ -819,7 +798,7 @@ $ python manage.py shell
 ## Caches
 
 Django provides out-of-the-box support for configuring and using various `cache` systems with the
-web server. Typically for a single-tenant web app, there could be zero or more caches
+web server. Typically, for a single-tenant web app, there could be zero or more caches
 configured as part of the `CACHES` dictionary.
 
 Example:
@@ -891,7 +870,6 @@ runs when the app bootstraps.
 > However, it is highly recommended that developers create a singleton 
 instance of the `tenant_router.cache.patch.TenantAwareCacheHandler` class in code and refactor 
 imports from `from djang.core.cache import caches` to `path.to.tenant_aware_cache_handler_instance`
-
 
 In order to discern which aliases are to be treated as **reserved**, the 
 `TENANT_ROUTER_CACHE_SETTINGS` has to be configured. For details about how to 
