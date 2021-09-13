@@ -124,8 +124,8 @@ To test things out, try the following:
 
 ## Configuration
 
-
-The following configuration options are available and will have to be provided in the `settings.py` module.
+The following configuration options are available and will have to be provided in the `settings.py` 
+module.
 
 ### **```CONFIG STORE```**
 *Required*. Type: `dict`
@@ -160,17 +160,17 @@ CACHES = {
 ...
 ```
 
-> **IMPORTANT**
+> **IMPORTANT**:
     Django, by default, associates a timeout (ttl) with all keys stored in a given cache. Since we expect the data
     in the config store to be persistent (i.e no timeout), the `TIMEOUT` parameter has to be explicitly
     set to `None`.
 
-> **NOTE**
+> **NOTE**:
     The `tenant_router_config_store` is a reserved special key which would be used internally by the 
     library for identifying the cache containing the tenant configuration. If it conflicts with an 
     already existing key, the conflicting key (specified by the user) will have to be changed.  
 
-For details about the schema of this configuration, [click here](#configuration-schema). 
+For details about the schema of this configuration, [click here](#configuration-file). 
 
 
 ### ```TENANT_ROUTER_SERVICE_NAME``` (mandatory)
@@ -373,7 +373,7 @@ By convention, this file should be named `tenant_config.json` and should be pres
 directory level as `settings.BASE_DIR`.
 
 The configuration specified in this file is synced to the
-[config store](settings.md#config-store) when the
+[config store](#config-store) when the
 `load_tenant_config` command is run. 
 
 ### Schema
@@ -867,11 +867,88 @@ up dynamically as well from the current request context.
 Both the above problems have been solved auto-magically by the library via a monkey patch that 
 runs when the app bootstraps. 
 
-> However, it is highly recommended that developers create a singleton 
+> **IMPORTANT**: However, it is highly recommended that developers create a singleton 
 instance of the `tenant_router.cache.patch.TenantAwareCacheHandler` class in code and refactor 
 imports from `from djang.core.cache import caches` to `path.to.tenant_aware_cache_handler_instance`
 
 In order to discern which aliases are to be treated as **reserved**, the 
 `TENANT_ROUTER_CACHE_SETTINGS` has to be configured. For details about how to 
-configure this setting, [click here](#tenant_router_cache_settings-optional) 
+configure this setting, [click here](#tenant_router_cache_settings-optional)
+
+## The pre-fork problem
+
+In order to scale and take advantage of the underlying hardware,
+process managers (like Gunicorn, Celery etc.,) typically spawn multiple worker/child processes
+using a [pre-fork server model](https://docs.gunicorn.org/en/stable/design.html#server-model).
+Interestingly there are two variations of this model depending on when the fork actually happens.
+
+* The master process forks itself first to spawn workers and then loads the Django app in
+ each of the worker processes. This is the default behaviour in WSGI servers like 
+ Gunicorn, uWSGI etc.,
+
+* The master process loads the Django app first and then forks itself. This is the default
+ behaviour in Celery. The same can be achieved in the WSGI servers mentioned above as well by
+ enabling a specific setting. (For eg: In Gunicorn, this can be achieved by setting the
+ `preload_app` to `True`)
+ 
+For the pub/sub mechanism to work correctly, it is mandatory that a background event listener
+(thread) be spawned in each of the worker processes to receive and process events.
+
+Assuming that the code for launching the BG event listener (thread) is placed in the 
+[ready](https://docs.djangoproject.com/en/3.1/ref/applications/#django.apps.AppConfig.ready) 
+method of the `tenant_router` app, it would work fine for the first variant mentioned above
+but would fail for the second variant since ***background threads launched in the parent
+process don't survive a fork and hence won't be copied into the child processes***.
+
+Also, apart from the *pre-fork* server model, it is possible to use other methods to launch 
+child/worker processes, though they're not being widely used in practice. More info about
+this can be found 
+[here](https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods).
+
+Considering all the above mentioned cases, it is impossible for the library to determine the
+right place to put code responsible for launching the backgound event listener (thread).
+
+In order to solve this, the library exposes a callback which has to be invoked in
+every child/worker process once it's spawned. **It is the responsibility of the developers to 
+hook this callback in the right place so that it is invoked appropriately**.
+
+For example, if [gunicorn](https://docs.gunicorn.org/en/latest/index.html) is being used, then 
+in the [gunicorn.conf.py](https://docs.gunicorn.org/en/latest/configure.html#configuration-file) 
+file, place the following code:
+
+```python
+# on_worker_init and on_worker_exit are the callbacks exposed by the library
+# they should be imported and used as follows:
+from tenant_router.bootstrap import on_worker_init, on_worker_exit   
+...
+
+def post_worker_init(worker):
+    on_worker_init()
+
+
+def worker_exit(server, worker):
+    on_worker_exit()
+```
+
+> **NOTE**:
+    The `on_worker_exit` callback is responsible for gracefully shutting down the
+    background event listener (thread). Although it would be ideal if invoked
+    from an appropriate hook, it is not entirely mandatory in case such a hook is unavailable. 
+
+Similarly, if uWSGI is being used, then these callbacks could be invoked from the 
+[post-fork](https://uwsgi-docs.readthedocs.io/en/latest/PythonDecorators.html#uwsgidecorators.postfork)
+hook.
+
+If, for some reason, the WSGI server doesn't expose such a hook, the low-level 
+[register_at_fork](https://docs.python.org/3/library/os.html#os.register_at_fork) method can
+be used, though this *might not work* on some platforms.
+
+> **IMPORTANT**:
+    If **Celery** is being used, then the app does not have to do anything as the library
+    already hooks these callbacks to the 
+    [worker_process_init](https://docs.celeryproject.org/en/stable/userguide/signals.html#worker-process-shutdown)
+    and 
+    [worker_process_shutdown](https://docs.celeryproject.org/en/stable/userguide/signals.html#worker-process-shutdown)
+    signals.
+
 
