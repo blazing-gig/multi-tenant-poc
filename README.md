@@ -875,6 +875,147 @@ In order to discern which aliases are to be treated as **reserved**, the
 `TENANT_ROUTER_CACHE_SETTINGS` has to be configured. For details about how to 
 configure this setting, [click here](#tenant_router_cache_settings-optional)
 
+## Unit tests
+
+### Django ORM
+
+Since the web app is now capable of interacting with multiple DBs', the following guidelines have been laid
+down by Django in this context, which have to be understood first to proceed further.
+
+- [Multi-DB testing scenarios](https://docs.djangoproject.com/en/2.2/topics/testing/advanced/#tests-and-multiple-databases)
+- [Multi-DB support for tests](https://docs.djangoproject.com/en/2.2/topics/testing/tools/#multi-database-support)
+
+### Caveat
+As the first point above highlights, in order to control the creation order of databases, a `DEPENDENCIES` key
+could be specified for each DB configuration. By default, Django assumes that all DBs' depend on the
+`default` DB unless the `DEPENDENCIES` key is explicitly set, and so will create the `default` database
+first. Django also implicitly assumes that the `default` database has no dependencies.
+
+However since the `DATABASES` configuration could now potentially contain a mix of **reserved aliases** and
+**template aliases**, the default behavior of Django would break if the `default` DB is marked as a
+*template alias* because when Django tries to create it, it would error out since the . In order to prevent this from happening, it
+is **mandatory to set the `DEPENDENCIES` key explicitly in all DB configurations** according to the
+following rules based on alias type:
+
+1. **Template alias**: The value should either be an empty list or can have **only
+   reserved aliases** <br> in it.
+2. **Reserved alias**: The value should either be an empty list or can have other
+   reserved aliases <br> in it.
+
+Below is an illustration of the above mentioned points:
+
+```python
+# settings.py
+...
+DATABASES = {
+    # template alias
+    "default": {
+        "NAME": os.environ["PG_DATABASE"],
+        "USER": os.environ.get("PG_USER"),
+        "PASSWORD": os.environ.get("PG_PASSWORD"),
+        "HOST": os.environ["PG_HOST"],
+        "PORT": os.environ["PG_PORT"],
+        "OPTIONS": {...},
+        # This DB doesn't have any deps
+        "TEST": {
+            'DEPENDENCIES': []
+        }
+    },
+    # reserved alias
+    "central_db": {
+        "NAME": os.environ["PG_DATABASE"],
+        "USER": os.environ.get("PG_USER"),
+        "PASSWORD": os.environ.get("PG_PASSWORD"),
+        "HOST": os.environ["PG_HOST"],
+        "PORT": os.environ["PG_PORT"],
+        "OPTIONS": {...},
+        # This DB doesn't have any deps
+        "TEST": {
+            'DEPENDENCIES': []
+        }
+    }
+}
+```
+
+!!! note
+If the `default` alias is marked as a *reserved alias*, then it is possible to skip
+defining the `DEPENDENCIES` key but this is **highly unrecommended** as this can cause
+unnecessary confusion when the configuration changes later on and also because *explicit is
+better than implicit*.
+
+### Custom test runner
+
+The behavior of the default test runner provided by Django is as follows:
+
+1. Creates test suites.
+2. Identifies the DB aliases which should be picked for creating test databases.
+3. Creates test databases on the selected set of aliases and applies DB migrations on each of them.
+4. Runs all test suites.
+5. Tears down the entire environment including all test databases which were created.
+
+A more detailed version of the above can be found [here](https://docs.djangoproject.com/en/2.2/topics/testing/advanced/#using-different-testing-frameworks)
+
+The second point highlights that every test suite which involves DB interaction in a multi-DB scenario,
+could define the DB aliases that each test within the suite would interact with, at the `class` level, thereby
+telling Django to create test databases for all those DB aliases.
+For example:
+
+```python
+# consider the same `DATABASES` setting from the above example
+from django.test import TestCase
+class HospitalModelTest(TestCase):
+    
+    databases = {'default', 'central_db'}
+    # This instructs Django to create test databases for the
+    # `default` and `central_db` aliases. 
+
+    def setUp(self):
+        DefaultModel.objects.create(
+            ...
+        )
+        CentralDbModel.objects.create(
+            ...
+        )
+
+    def test_object_create(self):
+        default_obj = SomeModel.objects.get(...)
+        central_db_obj = CentralDbModel.objects.get(...)
+        self.assertEqual(default_obj.some_attr, 'some_value')
+        self.assertEqual(central_db_obj.some_attr, 'some_value')
+
+```
+
+!!! note
+The `databases` attribute set at the class level could be a combination of
+**template aliases** and **reserved aliases** or, if not set explicitly, would fall back to
+the `default` alias.
+
+When the above test case is run, it would fail due to the following reasons:
+
+1. The template aliases present in the `databases` attribute is not tenant normalized. As a result,
+   creation of test databases for these aliases would fail.
+2. Since test DB creation fails, any ORM queries made within tests when run would subsequently fail.
+
+To fix both the above problems, plug in the custom test runner as follows:
+
+```python
+# settings.py
+...
+TEST_RUNNER = 'tenant_router.orm_backends.django_orm.test_util.TenantAwareTestRunner'
+...
+```
+
+### Other ORM libraries
+
+Since the other ORM libraries that ship with this package do not have a well defined test strategy,
+apps will have to implement their own testing strategy.
+
+!!! important
+If a custom test runner other than `TenantAwareTestRunner` is used, then it should
+either take up the responsibility of setting the tenant context for the scope of the entire test
+run or can delegate it potentially to the `setUpClass` or `setUp` methods of the individual
+`TestCase` classes.
+
 ## The pre-fork problem
 
 In order to scale and take advantage of the underlying hardware,
